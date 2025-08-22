@@ -11,7 +11,6 @@ This script automates the process of packaging, uploading, and assigning printer
 It ensures required modules are installed, connects to Intune, creates detection logic, sets up app properties, and assigns the app to Azure AD groups.
 
 **Version 2.2.0 Enhancements (Public Release):**
-- All company-specific and confidential information removed
 - Documentation and script now suitable for public use
 - Automatic creation of `.intunewin` package (no manual packaging needed)
 - Automatic certificate extraction and installation from .cat files
