@@ -12,7 +12,7 @@
     - Icon selection dialog and auto-selection
     - Enhanced error handling and summary output
     - Driver details extraction from INF file
-    - Support for DriverWizard.exe and PrnInst.exe for advanced driver installation scenarios
+    - Support for DriverWizard and PrnInst.exe for advanced driver installation scenarios
     - Uploads package to Intune with all configuration
 
 .NOTES
@@ -20,9 +20,10 @@
     Version:        1.4.0
     Date Created:   31/12/2021
     Last Modified:  20/08/2025
+    Company:        BEJO
 
 .VERSION HISTORY
-    1.0.0 - Initial release
+    1.0.0 - Initial release by Ben Whitmore
     1.1.0 - Added Advanced Port Monitor support with PrnInst.exe
     1.2.0 - Removed certificate parameter, added automatic .cat file certificate extraction
     1.3.0 - Added automatic .intunewin package creation using IntuneWinAppUtil.exe
@@ -34,16 +35,7 @@
     - Microsoft Graph permissions for Intune app management
     - IntuneWinAppUtil.exe (will be downloaded automatically if not present)
     - DriverWizard.exe (optional, for advanced driver installation scenarios)
-    - PrnInst.exe (optional, for advanced port monitor scenarios)
     - Administrator rights to install PowerShell modules
-
-.APP REGISTRATION PERMISSIONS NEEDED
-    The Azure AD app registration used for authentication must have the following Microsoft Graph API permissions:
-    - DeviceManagementApps.ReadWrite.All (Application)
-    - DeviceManagementManagedDevices.ReadWrite.All (Application)
-    - Directory.Read.All (Application)
-    - User.Read (Delegated)
-    You must grant admin consent for these permissions.
 
 .EXAMPLE
     .\script.ps1
@@ -51,38 +43,51 @@
     This will automatically create the .intunewin package (if needed), create a Win32 app in Intune, and optionally use DriverWizard.exe and PrnInst.exe for advanced driver installation scenarios.
 
 .IMAGE SELECTION FUNCTION
-    The script will automatically search for JPEG, JPG, or PNG image files in the script's folder. If only one image is found, it will be used as the app icon. If multiple images are found, you will be prompted to select one via a file dialog. If no images are found, you will be prompted to browse and select an image manually. This icon will be used for the Intune app.
+    The script will automatically search for JPEG, JPG, or PNG image files in the script's folder. If only one image is found, it will be used as the app icon. If multiple images are found, you will be prompted to select one. If no images are found, you will be prompted to browse and select an image manually. This icon will be used for the Intune app.
 
 .LINK
     https://github.com/MSEndpointMgr/IntuneWin32App
 #>
 
-# ============================================================================== 
-# EDITABLE PARAMETERS - MODIFY THESE VALUES FOR YOUR PRINTER CONFIGURATION 
-# ============================================================================== 
+# ==============================================================================
+# EDITABLE PARAMETERS - MODIFY THESE VALUES FOR YOUR PRINTER CONFIGURATION
+# ==============================================================================
 
-# Printer Display Name - Use your preferred naming convention
-$DisplayName = "Printer-Example-1"
+# GLOBAL PRINTER NAMING CONVENTION (Summary)
+# All printer names must follow the global standard:
+# - General: <COUNTRY>-<BRAND>-<MODEL>-<BUSINESS_UNIT>-<SEQUENCE>
+# - Netherlands (legacy): <COUNTRY>-LAB-<BUILDING>-<FLOOR>-<BUSINESS_UNIT>-<FUNCTION>-<SEQUENCE>
+# Example (NL): NLD-LAB-1C-V0-SEED-ANALYSIS-2
+# Example (FR): FRA-KYO-M8130-FINANCE-1
+# Example (USA): USA-HP-M611-HR-1
+
+# Printer Display Name - Use the naming convention above
+$DisplayName = "MDM-NL-LAB-1C-V0-SEED-ANALYSIS-1"
 
 # IP Address Configuration
 # IMPORTANT: If you prefix the IP address with "LAN_" (e.g., "LAN_10.5.0.40"), 
 # the Install-Printer.ps1 script will automatically use PrnInst.exe and DriverWizard.exe (if present in the same folder)
 # to create an Advanced Port Monitor instead of a standard TCP/IP port.
+# This provides better port monitoring capabilities for network printers.
+# Examples:
+#   Standard TCP/IP port: $ipadress = "10.5.0.40"
+#   Advanced Port Monitor: $ipadress = "LAN_10.5.0.40"
 $ipadress = "10.5.0.60"
 
 # Driver Name - Must match exactly the driver name in the INF file
-$Drivername = "Example Printer Driver"
+# Examples: "KONICA MINOLTA Universal PCL", "HP Universal Printing PCL 6", "Toshiba BV410D TS"
+$Drivername = "Intermec PC43t (203 dpi) - DP"
 
 # INF File Name - The driver INF file that should be in the same directory
-$inffile = "Example.inf"
+$inffile = "Intermec.inf"
 
 # Intune Tenant Configuration
-$TenantID = "<your-tenant-id>.onmicrosoft.com"
-$ClientID = "<your-app-registration-client-id>"
+$TenantID = "bejo.onmicrosoft.com"
+$ClientID = "14d82eec-204b-4c2f-b7e8-296a70dab67e"
 
-# ============================================================================== 
-# END OF EDITABLE PARAMETERS - DO NOT MODIFY BELOW UNLESS YOU KNOW WHAT YOU'RE DOING 
-# ============================================================================== 
+# ==============================================================================
+# END OF EDITABLE PARAMETERS - DO NOT MODIFY BELOW UNLESS YOU KNOW WHAT YOU'RE DOING
+# ==============================================================================
 
 #region Function to Download and Setup IntuneWinAppUtil
 function Get-IntuneWinAppUtil {
@@ -199,37 +204,28 @@ Write-Host "================================" -ForegroundColor Cyan
 $IntuneWinFile = "$PSScriptRoot\Install-Printer.intunewin"
 
 # Check if .intunewin package exists
-if (-not (Test-Path $IntuneWinFile)) {
-    Write-Host "`n.intunewin package not found. Will create it automatically." -ForegroundColor Yellow
-    
-    # Verify Install-Printer.ps1 exists
-    $InstallScript = "$PSScriptRoot\Install-Printer.ps1"
-    if (-not (Test-Path $InstallScript)) {
-        Write-Host "× Install-Printer.ps1 not found in: $PSScriptRoot" -ForegroundColor Red
-        Write-Host "  Please ensure Install-Printer.ps1 is in the same directory as this script." -ForegroundColor Yellow
-        exit 1
-    }
-    
-    # Verify driver files exist
-    $InfPath = Join-Path $PSScriptRoot $inffile
-    if (-not (Test-Path $InfPath)) {
-        Write-Host "× INF file not found: $InfPath" -ForegroundColor Red
-        Write-Host "  Please ensure all driver files are in the same directory." -ForegroundColor Yellow
-        exit 1
-    }
-    
-    # Create the package
-    $IntuneWinFile = New-IntuneWinPackage -SourceFolder $PSScriptRoot -SetupFile "Install-Printer.ps1" -OutputFolder $PSScriptRoot
-    
-    if (-not $IntuneWinFile) {
-        Write-Host "`n× Failed to create .intunewin package" -ForegroundColor Red
-        exit 1
-    }
-    
-    Write-Host "`n✓ Package created successfully!" -ForegroundColor Green
-} else {
-    Write-Host "`n✓ .intunewin package found: $IntuneWinFile" -ForegroundColor Green
+Write-Host "`n(Re)creating .intunewin package..." -ForegroundColor Yellow
+# Verify Install-Printer.ps1 exists
+$InstallScript = "$PSScriptRoot\Install-Printer.ps1"
+if (-not (Test-Path $InstallScript)) {
+    Write-Host "× Install-Printer.ps1 not found in: $PSScriptRoot" -ForegroundColor Red
+    Write-Host "  Please ensure Install-Printer.ps1 is in the same directory as this script." -ForegroundColor Yellow
+    exit 1
 }
+# Verify driver files exist
+$InfPath = Join-Path $PSScriptRoot $inffile
+if (-not (Test-Path $InfPath)) {
+    Write-Host "× INF file not found: $InfPath" -ForegroundColor Red
+    Write-Host "  Please ensure all driver files are in the same directory." -ForegroundColor Yellow
+    exit 1
+}
+# Create the package
+$IntuneWinFile = New-IntuneWinPackage -SourceFolder $PSScriptRoot -SetupFile "Install-Printer.ps1" -OutputFolder $PSScriptRoot
+if (-not $IntuneWinFile) {
+    Write-Host "`n× Failed to create .intunewin package" -ForegroundColor Red
+    exit 1
+}
+Write-Host "`n✓ Package created successfully!" -ForegroundColor Green
 #endregion
 
 #region Initialize Connection
