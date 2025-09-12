@@ -1,0 +1,86 @@
+{
+  "version": "Notebook/1.0",
+  "items": [
+    {
+      "type": 3,
+      "content": {
+        "version": "KqlItem/1.0",
+        "query": "BrowserExtensionsInventory_CL\n| summarize ExtensionCount = dcount(ExtensionID_s) by DeviceName_s\n| project DeviceName_s, ExtensionCount\n| order by ExtensionCount desc",
+        "size": 1,
+        "title": "Extension count per device",
+        "timeContext": {
+          "durationMs": 2592000000
+        },
+        "queryType": 0,
+        "resourceType": "microsoft.operationalinsights/workspaces",
+        "visualization": "barchart",
+        "chartSettings": {
+          "xColumn": "DeviceName_s",
+          "yColumns": [
+            "ExtensionCount"
+          ],
+          "legend": {
+            "isVisible": false
+          }
+        }
+      },
+      "name": "query - 1",
+      "styleSettings": {
+        "showBorder": true
+      }
+    },
+    {
+      "type": 3,
+      "content": {
+        "version": "KqlItem/1.0",
+        "query": "BrowserExtensionsInventory_CL\n| summarize DeviceCount = dcount(DeviceName_s) by ExtensionName_s\n| top 50 by DeviceCount desc\n| project ExtensionName_s, DeviceCount",
+        "size": 1,
+        "title": "Most common extensions (unique devices)",
+        "timeContext": {
+          "durationMs": 2592000000
+        },
+        "queryType": 0,
+        "resourceType": "microsoft.operationalinsights/workspaces",
+        "visualization": "piechart",
+        "chartSettings": {
+          "legendColumn": "ExtensionName_s",
+          "valueColumn": "DeviceCount",
+          "labelSettings": {
+            "showCategory": true,
+            "showValue": true
+          }
+        }
+      },
+      "name": "query - 2",
+      "styleSettings": {
+        "showBorder": true
+      }
+    },
+    {
+      "type": 3,
+      "content": {
+        "version": "KqlItem/1.0",
+        "query": "BrowserExtensionsInventory_CL\n| summarize arg_max(TimeGenerated, *) by DeviceName_s, ExtensionID_s, ExtensionName_s, Browser_s, Version_s, Username_s\n| project TimeGenerated, DeviceName_s, ExtensionID_s, ExtensionName_s, Browser_s, Version_s, Username_s\n| top 2000 by TimeGenerated desc",
+        "size": 1,
+        "title": "Full browser extension inventory (unique per device)",
+        "timeContext": {
+          "durationMs": 2592000000
+        },
+        "showExportToExcel": true,
+        "queryType": 0,
+        "resourceType": "microsoft.operationalinsights/workspaces",
+        "gridSettings": {
+          "filter": true
+        }
+      },
+      "name": "query - 3",
+      "styleSettings": {
+        "showBorder": true
+      }
+    }
+  ],
+  "fallbackResourceIds": [
+    "/subscriptions/c578fd50-34c8-4342-8fbd-a094689c2b48/resourceGroups/BejoDesktopAnalytics/providers/Microsoft.OperationalInsights/workspaces/BejoDesktopAnalytics"
+  ],
+  "$schema": "https://github.com/Microsoft/Application-Insights-Workbooks/blob/master/schema/workbook.json"
+}
