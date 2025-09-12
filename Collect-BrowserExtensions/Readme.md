@@ -251,7 +251,7 @@ To customize or edit your workbook for browser extension inventory in Azure Log 
 
 ![Sample Extension Data](./screenshots/sample-extension-data.png)
 
-(![alt text](image-1.png))
+![alt text](image-3.png)
 
 ---
 
