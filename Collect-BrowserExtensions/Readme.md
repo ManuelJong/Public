@@ -244,7 +244,7 @@ To customize or edit your workbook for browser extension inventory in Azure Log 
 ### 2. Data in Log Analytics
 
 ![Log Analytics Query Result]
-(![alt text](image-2.png))
+![alt text](image-2.png)
 
 
 ### 3. Example Extension Data
