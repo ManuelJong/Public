@@ -93,20 +93,25 @@ Uploading data to Azure Log Analytics using the HTTP Data Collector API is secur
 
 ### 3. Deploy with Intune
 
-#### Option 1: As an Intune Script (One-Time or Scheduled)
+You can deploy this script using either of the following options in **Intune > Devices | Scripts** or **Intune > Devices | Remediations**:
+
+#### Option 1: As an Intune Remediation Script
+
+1. In the Intune portal, go to **Devices > Scripts and Remediations** (One-Time or Scheduled)).
+2. Click **+ Create script package**.
+3. Enter a name and description for your remediation.
+4. Upload `collect-browserextentions2.ps1` as the Detection script (Do not upload a remediation script).
+5. Assign the remediation to your target device or user group.
+6. Configure the schedule and remediation settings as needed.
+7. Review and create the remediation package.
+
+#### Option 2: As an Intune Script
 
 1. In the Intune portal, go to **Devices > Scripts**.
 2. Add a new PowerShell script.
 3. Upload `collect-browserextentions2.ps1`.
 4. Assign to your target device or user group.
 5. Configure to run once or on a schedule (using Intune's scheduling options).
-
-#### Option 2: As an Intune Detection Script
-
-1. In the Intune portal, go to **Apps > Windows > [Your App] > Properties > Detection rules**.
-2. Choose "Use a custom detection script".
-3. Upload `collect-browserextentions2.ps1`.
-4. (Optional) Modify the script to output a specific value or exit code if a certain extension is found/not found for compliance scenarios.
 
 ---
 
