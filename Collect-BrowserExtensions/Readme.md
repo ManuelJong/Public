@@ -255,14 +255,6 @@ To customize or edit your workbook for browser extension inventory in Azure Log 
 
 ---
 
-## Customization
-
-- **Log Type:**  Change `$LogType` to use a different custom log name in Log Analytics.
-- **TimeStampField:**  Set `$TimeStampField` if you want to specify a custom time field in your log records.
-- **Detection Logic:**  Modify the script to output a specific value or exit code for Intune detection/compliance scenarios.
-
----
-
 ## Troubleshooting
 
 - **No data in Log Analytics:**
