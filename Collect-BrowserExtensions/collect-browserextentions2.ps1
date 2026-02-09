@@ -52,12 +52,15 @@ function Collect-BrowserExtensions {
     $Extensions = @()
     $UserPaths = (Get-WmiObject win32_userprofile | Where-Object localpath -notmatch 'C:\\Windows').localpath
     foreach ($Path in $UserPaths) {
-        # Edge and Chrome
-        $MSEdgeDir = $Path + '\AppData\Local\Microsoft\Edge\User Data'
-        $GoogDir = $Path + '\AppData\Local\Google\Chrome\User Data'
-        $CheckBrowserDir = New-Object Collections.Generic.List[string]
-        if (Test-Path $MSEdgeDir) { $CheckBrowserDir.Add($MSEdgeDir) }
-        if (Test-Path $GoogDir) { $CheckBrowserDir.Add($GoogDir) }
+        # Chromium-based browsers (discover without hardcoding a single vendor)
+        $chromiumCandidates = @(
+            (Join-Path $Path 'AppData\Local\Microsoft\Edge\User Data'),
+            (Join-Path $Path 'AppData\Local\Google\Chrome\User Data'),
+            (Join-Path $Path 'AppData\Local\BraveSoftware\Brave-Browser\User Data'),
+            (Join-Path $Path 'AppData\Local\Vivaldi\User Data'),
+            (Join-Path $Path 'AppData\Roaming\Opera Software\Opera Stable')
+        )
+        $CheckBrowserDir = $chromiumCandidates | Where-Object { Test-Path $_ }
         foreach ($BrowserDir in $CheckBrowserDir) {
             $ProfilePaths = (Get-ChildItem -Path $BrowserDir | Where-Object Name -match 'Default|Profile').FullName
             foreach ($ProfilePath in $ProfilePaths) {
